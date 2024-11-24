@@ -1,41 +1,74 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { StatusBar } from 'expo-status-bar';
 import { FlatList, SafeAreaView, StyleSheet } from 'react-native';
 
 import { Input } from '../../components/Input';
 import { Task, TaskProps } from '../../components/Task';
+import { database } from '../../database';
+import { TaskModel } from '../../database/model/TaskModel';
 
 export function Home() {
 
   const [newTaskName, setNewTaskName] = useState('');
   const [tasks, setTasks] = useState<TaskProps[]>([]);
 
-  function handleAddTask() {
-    const newTask = {
-        name: newTaskName,
-        isComplete: false,
-        id: String(new Date().getTime()),
-    };
+  async function handleAddTask() {
+    try {
+      const taskCollection = database.get<TaskModel>('tasks');
 
-    setTasks([...tasks, newTask]);
+      const task = await database.write(async () => {
+        const newTask = await taskCollection.create(( newTask ) => {
+          newTask.name = newTaskName,
+          newTask.isComplete = false
+        });
 
-    setNewTaskName('');
+        return newTask
+      });
+
+      setTasks([...tasks, task]);
+
+      setNewTaskName('');
+    } catch (error) {
+      console.log(error);
+    }
   }
 
-  function handleToggleTaskCompletion(id: string) {
-    const updatedTasks = tasks.map(task => {
-        if (task.id === id) {
-            return {
-                ...task,
-                isComplete: !task.isComplete,
-            }
-        }
+  async function handleToggleTaskCompletion(id: string) {
+    try {
+      const taskCollection = database.get<TaskModel>('tasks');
 
-        return task;
-    });
+      const task = await taskCollection.find(id);
 
-    setTasks(updatedTasks);
+      await database.write(async () => {
+        await task.update((selectedTask) => {
+          selectedTask.isComplete = !selectedTask.isComplete
+        })
+      });
+
+      const tasks = await taskCollection.query().fetch();
+
+      setTasks(tasks);
+      
+    } catch (error) {
+      console.log(error);
+    }
   }
+
+  useEffect(() => {
+    async function loadTasks() {
+      try {
+        const taskCollection = database.get<TaskModel>('tasks');
+  
+        const tasks = await taskCollection.query().fetch();
+
+        setTasks(tasks);
+      } catch (error) {
+        console.log(error);
+      }
+    }
+
+    loadTasks();
+  }, []);
 
   return (
     <SafeAreaView style={styles.container}>
