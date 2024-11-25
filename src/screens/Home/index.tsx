@@ -1,10 +1,10 @@
-import { useEffect, useState } from 'react';
 import { StatusBar } from 'expo-status-bar';
-import { FlatList, SafeAreaView, StyleSheet } from 'react-native';
+import { useEffect, useState } from 'react';
+import { FlatList, StyleSheet, View } from 'react-native';
 
+import { database } from '../../database';
 import { Input } from '../../components/Input';
 import { Task, TaskProps } from '../../components/Task';
-import { database } from '../../database';
 import { TaskModel } from '../../database/model/TaskModel';
 
 export function Home() {
@@ -71,7 +71,7 @@ export function Home() {
   }, []);
 
   return (
-    <SafeAreaView style={styles.container}>
+    <View style={styles.container}>
       <StatusBar style="dark" />
 
       <Input 
@@ -86,6 +86,8 @@ export function Home() {
       <FlatList 
         data={tasks}
         keyExtractor={item => item.id}
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={{ paddingBottom: 30 }}
         renderItem={({ item }) => (
           <Task 
             name={item.name}
@@ -94,13 +96,14 @@ export function Home() {
           />
         )}
       />
-    </SafeAreaView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    marginTop: 50,
     backgroundColor: '#FFF',
-  },
+  }
 });
